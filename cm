@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+
+
+
+# Require commit message
+if [ -z "$1" ]; then
+ echo "❌ Commit message required"
+ exit 1
+fi
+
+
+
+
+# "git init" for the first time
+git add -A
+git commit -m "$1"
+
+
+
+
+# For First Time Setup:
+# git remote add origin {link-here}
+# git branch -m main
+git fetch origin
+git rebase origin/main
+
+
+
+
+# "git push --set-upstream origin main" for the first time
+git push --force-with-lease origin main
+
+
+
+
+# ---------- NEW LOGIC BELOW ----------
+
+
+
+
+# If a second argument is provided, treat it as a version tag
+if [ -n "$2" ]; then
+ TAG="$2"
+
+
+
+
+ # Create annotated tag
+ git tag -a "$TAG" -m "$1"
+
+
+
+
+ # Push tag
+ git push origin "$TAG"
+
+
+
+
+ # Create GitHub release
+ gh release create "$TAG" \
+   --title "$TAG" \
+   --notes "$1"
+fi
