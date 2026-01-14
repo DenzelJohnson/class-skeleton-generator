@@ -1,4 +1,5 @@
 import type { ClassDef, ProjectState, RelationshipDef, Visibility } from '../model/types'
+import { CONSTRUCTOR_RETURN_TYPE } from '../model/sentinels'
 
 function toMathItalic(s: string): string {
   const out: string[] = []
@@ -22,7 +23,7 @@ function classTitle(c: ClassDef): string {
   const gen = (c.genericParam ?? '').trim()
   const raw = gen ? `${nameRaw}<${gen}>` : nameRaw
   const name = c.kind === 'abstract_class' ? toMathItalic(raw) : raw
-  if (c.kind === 'interface') return `«Interface» ${raw}`
+  if (c.kind === 'interface') return `«interface» ${raw}`
   return name
 }
 
@@ -50,6 +51,11 @@ function methodLine(c: ClassDef): string[] {
       })
       .join(', ')
     const ret = m.returnType.trim() || 'void'
+    if (ret === CONSTRUCTOR_RETURN_TYPE) {
+      const cnRaw = c.name.trim() || 'Unnamed'
+      const cn = c.kind === 'abstract_class' ? toMathItalic(cnRaw) : cnRaw
+      return `${sym}${cn}(${params})`
+    }
     return `${sym}${name}(${params}): ${ret}`
   })
 }

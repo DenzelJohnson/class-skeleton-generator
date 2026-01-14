@@ -1,9 +1,20 @@
 import type { ClassDef, ProjectState, Visibility } from '../model/types'
+import { CONSTRUCTOR_RETURN_TYPE } from '../model/sentinels'
 
 function vis(v: Visibility): string {
   if (v === 'private') return 'private'
   if (v === 'protected') return 'protected'
   return 'public'
+}
+
+function javaParams(m: ClassDef['methods'][number]): string {
+  return m.params
+    .map((p) => {
+      const pname = p.name.trim() || 'arg'
+      const ptype = p.type.trim() || 'String'
+      return `${ptype} ${pname}`
+    })
+    .join(', ')
 }
 
 function classDecl(c: ClassDef, state: ProjectState): string {
@@ -66,21 +77,26 @@ export function generateJava(state: ProjectState): string {
     for (const m of c.methods) {
       const name = m.name.trim() || 'unnamed'
       const ret = m.returnType.trim() || 'void'
-      const params = m.params
-        .map((p) => {
-          const pname = p.name.trim() || 'arg'
-          const ptype = p.type.trim() || 'String'
-          return `${ptype} ${pname}`
-        })
-        .join(', ')
+      const params = javaParams(m)
 
-      const baseSig = `${vis(m.visibility)} ${ret} ${name}(${params})`
-      if (c.kind === 'interface' || m.kind === 'abstract') {
-        // No body for interface or abstract methods.
-        const sig = c.kind === 'interface' ? baseSig : `${vis(m.visibility)} abstract ${ret} ${name}(${params})`
-        out.push(`\t${sig};`)
+      // For interface methods and abstract methods, output a template: `return name(params){};`
+      if (c.kind === 'interface') {
+        // No visibility modifier for interface methods (implicit public).
+        // Constructors are not meaningful in interfaces; fall back to `void` template.
+        const rr = ret === CONSTRUCTOR_RETURN_TYPE ? 'void' : ret
+        out.push(`\t${rr} ${name}(${params});`)
+      } else if (m.kind === 'abstract') {
+        // Keep selected visibility, but render as a signature (per request).
+        const rr = ret === CONSTRUCTOR_RETURN_TYPE ? 'void' : ret
+        out.push(`\t${vis(m.visibility)} ${rr} ${name}(${params});`)
       } else {
-        out.push(`\t${baseSig} {`)
+        if (ret === CONSTRUCTOR_RETURN_TYPE) {
+          const cn = (c.name.trim() || 'Unnamed')
+          out.push(`\t${vis(m.visibility)} ${cn}(${params}) {`)
+        } else {
+          const baseSig = `${vis(m.visibility)} ${ret} ${name}(${params})`
+          out.push(`\t${baseSig} {`)
+        }
         // Blank line inside method body, indented with a full tab (per request).
         out.push('\t\t')
         out.push('\t}')

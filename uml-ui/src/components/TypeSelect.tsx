@@ -31,6 +31,7 @@ const C_VALUE_TYPES: CoreType[] = [
 const C_RETURN_TYPES: CoreType[] = [{ value: 'void' }, ...C_VALUE_TYPES]
 
 const CUSTOM_SENTINEL = '__custom__'
+const CONSTRUCTOR_SENTINEL = '__constructor__'
 
 export function TypeSelect({
   language,
@@ -55,11 +56,16 @@ export function TypeSelect({
   // If a non-core value is present, ensure we show the custom input.
   useEffect(() => {
     if (!normalized) return
+    if (normalized === CONSTRUCTOR_SENTINEL) {
+      setCustomMode(false)
+      return
+    }
     if (!isCore) setCustomMode(true)
     if (isCore) setCustomMode(false)
   }, [isCore, normalized])
 
-  const selectValue = customMode ? CUSTOM_SENTINEL : normalized === '' ? '' : isCore ? normalized : CUSTOM_SENTINEL
+  const selectValue =
+    normalized === CONSTRUCTOR_SENTINEL ? CONSTRUCTOR_SENTINEL : customMode ? CUSTOM_SENTINEL : normalized === '' ? '' : isCore ? normalized : CUSTOM_SENTINEL
 
   return (
     <div className="typeSelect">
@@ -68,6 +74,11 @@ export function TypeSelect({
         value={selectValue}
         onChange={(e) => {
           const next = e.target.value
+          if (next === CONSTRUCTOR_SENTINEL) {
+            setCustomMode(false)
+            onChange(CONSTRUCTOR_SENTINEL)
+            return
+          }
           if (next === CUSTOM_SENTINEL) {
             setCustomMode(true)
             // If we were on a core value, clear it for easier typing.
@@ -79,6 +90,9 @@ export function TypeSelect({
         }}
       >
         <option value="">Select type…</option>
+        {includeVoid ? (
+          <option value={CONSTRUCTOR_SENTINEL}>constructor</option>
+        ) : null}
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label ?? o.value}

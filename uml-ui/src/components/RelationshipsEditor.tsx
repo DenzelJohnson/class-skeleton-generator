@@ -7,7 +7,7 @@ const MULTS: Multiplicity[] = ['', '1', '*']
 
 function relLabel(t: RelationshipType): string {
   if (t === 'extends') return 'Inheritance (extends)'
-  if (t === 'implements') return 'Interface (implements)'
+  if (t === 'implements') return 'interface (implements)'
   if (t === 'composition') return 'Composition'
   return 'Aggregation'
 }

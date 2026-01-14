@@ -2,6 +2,7 @@ import type { Dispatch } from 'react'
 import type { Action } from '../model/store'
 import type { ClassDef, Language, MethodKind, Visibility } from '../model/types'
 import { TypeSelect } from './TypeSelect'
+import { CONSTRUCTOR_RETURN_TYPE } from '../model/sentinels'
 
 const VISIBILITIES: Visibility[] = ['private', 'public', 'protected']
 const METHOD_KINDS: MethodKind[] = ['concrete', 'abstract']
@@ -76,7 +77,7 @@ export function ClassEditor({
                   >
                     <option value="class">class</option>
                     <option value="abstract_class">abstract class</option>
-                    <option value="interface">Interface</option>
+                    <option value="interface">interface</option>
                   </select>
                 </label>
 
@@ -204,6 +205,7 @@ export function ClassEditor({
                         <select
                           className="select"
                           value={m.visibility}
+                          disabled={c.kind === 'interface'}
                           onChange={(e) =>
                             dispatch({
                               type: 'method.patch',
@@ -213,9 +215,9 @@ export function ClassEditor({
                             })
                           }
                         >
-                          {VISIBILITIES.map((v) => (
+                          {(c.kind === 'interface' ? (['public'] as Visibility[]) : VISIBILITIES).map((v) => (
                             <option key={v} value={v}>
-                              {visibilityLabel(v)}
+                              {c.kind === 'interface' ? 'public (implicit)' : visibilityLabel(v)}
                             </option>
                           ))}
                         </select>
@@ -225,8 +227,9 @@ export function ClassEditor({
                         <div className="label">Name</div>
                         <input
                           className="input"
-                          value={m.name}
+                          value={m.returnType === CONSTRUCTOR_RETURN_TYPE ? c.name : m.name}
                           placeholder="e.g. flow"
+                          disabled={m.returnType === CONSTRUCTOR_RETURN_TYPE}
                           onChange={(e) =>
                             dispatch({
                               type: 'method.patch',
@@ -249,7 +252,7 @@ export function ClassEditor({
                               type: 'method.patch',
                               classId: c.id,
                               methodId: m.id,
-                              patch: { returnType: next },
+                              patch: next === CONSTRUCTOR_RETURN_TYPE ? { returnType: next, kind: 'concrete' } : { returnType: next },
                             })
                           }
                         />
@@ -260,6 +263,7 @@ export function ClassEditor({
                         <select
                           className="select"
                           value={m.kind}
+                          disabled={m.returnType === CONSTRUCTOR_RETURN_TYPE}
                           onChange={(e) =>
                             dispatch({
                               type: 'method.patch',

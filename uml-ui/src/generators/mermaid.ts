@@ -1,4 +1,5 @@
 import type { ClassDef, ProjectState, RelationshipDef, Visibility } from '../model/types'
+import { CONSTRUCTOR_RETURN_TYPE } from '../model/sentinels'
 
 function visSymbol(v: Visibility): string {
   if (v === 'private') return '-'
@@ -103,7 +104,12 @@ export function generateMermaidClassDiagram(state: ProjectState): string {
         })
         .join(', ')
       const ret = m.returnType.trim() || 'void'
-      lines.push(`  ${sym}${mname}(${params}): ${ret}`)
+      if (ret === CONSTRUCTOR_RETURN_TYPE) {
+        const cn = classUmlName(c)
+        lines.push(`  ${sym}${cn}(${params})`)
+      } else {
+        lines.push(`  ${sym}${mname}(${params}): ${ret}`)
+      }
     }
 
     lines.push('}')

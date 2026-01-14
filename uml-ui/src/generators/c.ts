@@ -1,4 +1,5 @@
 import type { ClassDef, ProjectState, Visibility } from '../model/types'
+import { CONSTRUCTOR_RETURN_TYPE } from '../model/sentinels'
 
 function cType(t: string): string {
   const s = t.trim()
@@ -68,8 +69,9 @@ function prototypesForClass(c: ClassDef): string[] {
   const sn = structName(c)
 
   for (const m of c.methods) {
-    const ret = cType(m.returnType)
-    const fn = methodName(c, m.name)
+    const isCtor = m.returnType.trim() === CONSTRUCTOR_RETURN_TYPE
+    const ret = isCtor ? 'void' : cType(m.returnType)
+    const fn = isCtor ? `${sn}_init` : methodName(c, m.name)
     const params = [
       `${sn}* self`,
       ...m.params.map((p) => {
@@ -88,8 +90,9 @@ function stubsForClass(c: ClassDef): string[] {
   const sn = structName(c)
 
   for (const m of c.methods) {
-    const ret = cType(m.returnType)
-    const fn = methodName(c, m.name)
+    const isCtor = m.returnType.trim() === CONSTRUCTOR_RETURN_TYPE
+    const ret = isCtor ? 'void' : cType(m.returnType)
+    const fn = isCtor ? `${sn}_init` : methodName(c, m.name)
     const params = [
       `${sn}* self`,
       ...m.params.map((p) => {
